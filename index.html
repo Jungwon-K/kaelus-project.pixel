@@ -13,7 +13,7 @@
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-6xl">
+    <div class="w-full max-w-6xl relative">
         <h1 class="text-2xl text-center mb-4 text-yellow-400">아텔버그: 네온의 감옥 (프로토타입)</h1>
         
         <div class="flex flex-col lg:flex-row gap-4">
@@ -30,6 +30,9 @@
                 <div class="ui-panel">
                     <h2 class="text-lg text-green-400 mb-2">플레이어: 니힐 (Nihil)</h2>
                     <div class="space-y-1 text-sm">
+                        <p>날짜: <span id="statDay" class="text-white">1</span>일차</p>
+                        <p>행동력: <span id="statActions" class="text-yellow-300">2</span></p>
+                        <hr class="border-gray-600 my-2">
                         <p>자산: <span id="statMoney" class="text-yellow-300">100</span> G</p>
                         <p>정신력: <span id="statMental" class="text-blue-300">80</span> / 100</p>
                         <p>과시: <span id="statPrestige" class="text-purple-300">5</span></p>
@@ -45,6 +48,7 @@
                         <p>운(L): <span id="statLuck" class="text-white">5</span></p>
                         <p>근성(G): <span id="statGrit" class="text-white">5</span></p>
                     </div>
+                    <p class="text-xs text-gray-400 mt-2">* 근성(G) 스탯에 따라<br>  일일 행동력이 정해집니다.</p>
                 </div>
 
                 <!-- 메시지 로그 -->
@@ -59,6 +63,16 @@
 
             </div>
         </div>
+
+        <!-- 게임 오버 모달 -->
+        <div id="gameOverModal" class="game-over-modal hidden">
+            <div class="modal-content">
+                <h2 id="gameOverTitle" class="text-3xl text-red-500 mb-4">GAME OVER</h2>
+                <p id="gameOverMessage" class="text-lg mb-6">메시지</p>
+                <button id="restartButton" class="restart-button">다시 시작</button>
+            </div>
+        </div>
+
     </div>
 
     <!-- 커스텀 JS 파일 로드 -->
