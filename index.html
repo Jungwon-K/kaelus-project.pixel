@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaelus Project - Prototype</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 픽셀 느낌의 폰트 로드 -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- 커스텀 CSS 파일 로드 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-6xl">
+        <h1 class="text-2xl text-center mb-4 text-yellow-400">아텔버그: 네온의 감옥 (프로토타입)</h1>
+        
+        <div class="flex flex-col lg:flex-row gap-4">
+            
+            <!-- 게임 캔버스 영역 -->
+            <div class="flex-grow">
+                <canvas id="gameCanvas" width="800" height="600"></canvas>
+            </div>
+            
+            <!-- UI 및 스탯 패널 -->
+            <div class="w-full lg:w-80 flex-shrink-0 space-y-4">
+                
+                <!-- 플레이어 스탯 -->
+                <div class="ui-panel">
+                    <h2 class="text-lg text-green-400 mb-2">플레이어: 니힐 (Nihil)</h2>
+                    <div class="space-y-1 text-sm">
+                        <p>자산: <span id="statMoney" class="text-yellow-300">100</span> G</p>
+                        <p>정신력: <span id="statMental" class="text-blue-300">80</span> / 100</p>
+                        <p>과시: <span id="statPrestige" class="text-purple-300">5</span></p>
+                    </div>
+                </div>
+
+                <!-- 기본 능력치 -->
+                <div class="ui-panel">
+                    <h2 class="text-lg text-green-400 mb-2">능력치 (Stats)</h2>
+                    <div class="grid grid-cols-2 gap-1 text-sm">
+                        <p>정신력(F): <span id="statFortitude" class="text-white">5</span></p>
+                        <p>의지력(W): <span id="statWillpower" class="text-white">5</span></p>
+                        <p>운(L): <span id="statLuck" class="text-white">5</span></p>
+                        <p>근성(G): <span id="statGrit" class="text-white">5</span></p>
+                    </div>
+                </div>
+
+                <!-- 메시지 로그 -->
+                <div class="ui-panel h-48">
+                    <h2 class="text-lg text-green-400 mb-2">메시지 로그</h2>
+                    <div id="messageLog">
+                        <p>하층 구역에 오신 것을 환영합니다.</p>
+                        <p>방향키(WASD)로 이동하세요.</p>
+                        <p>오브젝트 근처에서 [E] 키로 상호작용.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 커스텀 JS 파일 로드 -->
+    <script src="script.js"></script>
+</body>
+</html>
