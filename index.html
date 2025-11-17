@@ -14,6 +14,7 @@
 <body class="flex items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-6xl relative">
+        <!-- ... (모든 HTML UI 요소는 이전과 동일) ... -->
         <h1 class="text-2xl text-center mb-4 text-yellow-400">아텔버그: 네온의 감옥 (프로토타입)</h1>
         
         <div class="flex flex-col lg:flex-row gap-4">
@@ -48,7 +49,7 @@
                         <p>운(L): <span id="statLuck" class="text-white">5</span></p>
                         <p>근성(G): <span id="statGrit" class="text-white">5</span></p>
                     </div>
-                    <p class="text-xs text-gray-400 mt-2">* 근성(G) 스탯에 따라<br>  일일 행동력이 정해집니다.</p>
+                    <p class="text-xs text-gray-400 mt-2">* 근성(G): 일일 행동력<br>* 운(L): 도박 승리 확률<br>* 정신력(F): 정신력 하락 방어</p>
                 </div>
 
                 <!-- 메시지 로그 -->
@@ -60,22 +61,43 @@
                         <p>오브젝트 근처에서 [E] 키로 상호작용.</p>
                     </div>
                 </div>
-
             </div>
         </div>
 
         <!-- 게임 오버 모달 -->
-        <div id="gameOverModal" class="game-over-modal hidden">
-            <div class="modal-content">
+        <div id="gameOverModal" class="game-modal-overlay hidden">
+            <div class="game-modal-content game-over-modal">
                 <h2 id="gameOverTitle" class="text-3xl text-red-500 mb-4">GAME OVER</h2>
                 <p id="gameOverMessage" class="text-lg mb-6">메시지</p>
                 <button id="restartButton" class="restart-button">다시 시작</button>
             </div>
         </div>
+        
+        <!-- 슬롯 머신 모달 -->
+        <div id="slotMachineModal" class="game-modal-overlay hidden">
+            <div class="game-modal-content slot-modal">
+                <button id="closeSlotModal" class="modal-close">&times;</button>
+                <h2 class="text-2xl text-yellow-400 mb-4">하층 구역 슬롯머신</h2>
+                
+                <!-- 슬롯 릴 -->
+                <div class="flex justify-center gap-4 my-6">
+                    <div id="reel1" class="slot-reel">🍒</div>
+                    <div id="reel2" class="slot-reel">🍒</div>
+                    <div id="reel3" class="slot-reel">🍒</div>
+                </div>
+                
+                <!-- 베팅 정보 및 버튼 -->
+                <p id="slotMessage" class="text-sm text-gray-400 mb-4">베팅금: 10G | 행동력: 1 소모</p>
+                <button id="spinButton" class="spin-button">SPIN</button>
+            </div>
+        </div>
 
     </div>
 
-    <!-- 커스텀 JS 파일 로드 -->
-    <script src="script.js"></script>
+    <!-- 
+      (구) <script src="script.js"></script> -> 삭제
+      (신) main.js를 모듈 타입으로 로드
+    -->
+    <script type="module" src="main.js"></script>
 </body>
 </html>
