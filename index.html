@@ -4,35 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kaelus Project - Prototype</title>
-    <!-- Tailwind CSS 로드 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 픽셀 느낌의 폰트 로드 -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <!-- 커스텀 CSS 파일 로드 -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-6xl relative">
-        <!-- ... (모든 HTML UI 요소는 이전과 동일) ... -->
         <h1 class="text-2xl text-center mb-4 text-yellow-400">아텔버그: 네온의 감옥 (프로토타입)</h1>
         
         <div class="flex flex-col lg:flex-row gap-4">
-            
-            <!-- 게임 캔버스 영역 -->
+            <!-- 게임 캔버스 -->
             <div class="flex-grow">
                 <canvas id="gameCanvas" width="800" height="600"></canvas>
             </div>
             
-            <!-- UI 및 스탯 패널 -->
+            <!-- UI 패널 -->
             <div class="w-full lg:w-80 flex-shrink-0 space-y-4">
-                
-                <!-- 플레이어 스탯 -->
                 <div class="ui-panel">
                     <h2 class="text-lg text-green-400 mb-2">플레이어: 니힐 (Nihil)</h2>
                     <div class="space-y-1 text-sm">
                         <p>날짜: <span id="statDay" class="text-white">1</span>일차</p>
                         <p>행동력: <span id="statActions" class="text-yellow-300">2</span></p>
+                        <p>치안: <span id="statProtection" class="text-red-500">위험</span></p>
                         <hr class="border-gray-600 my-2">
                         <p>자산: <span id="statMoney" class="text-yellow-300">100</span> G</p>
                         <p>정신력: <span id="statMental" class="text-blue-300">80</span> / 100</p>
@@ -40,7 +34,6 @@
                     </div>
                 </div>
 
-                <!-- 기본 능력치 -->
                 <div class="ui-panel">
                     <h2 class="text-lg text-green-400 mb-2">능력치 (Stats)</h2>
                     <div class="grid grid-cols-2 gap-1 text-sm">
@@ -49,22 +42,16 @@
                         <p>운(L): <span id="statLuck" class="text-white">5</span></p>
                         <p>근성(G): <span id="statGrit" class="text-white">5</span></p>
                     </div>
-                    <p class="text-xs text-gray-400 mt-2">* 근성(G): 일일 행동력<br>* 운(L): 도박 승리 확률<br>* 정신력(F): 정신력 하락 방어</p>
                 </div>
 
-                <!-- 메시지 로그 -->
                 <div class="ui-panel h-48">
                     <h2 class="text-lg text-green-400 mb-2">메시지 로그</h2>
-                    <div id="messageLog">
-                        <p>하층 구역에 오신 것을 환영합니다.</p>
-                        <p>방향키(WASD)로 이동하세요.</p>
-                        <p>오브젝트 근처에서 [E] 키로 상호작용.</p>
-                    </div>
+                    <div id="messageLog"></div>
                 </div>
             </div>
         </div>
 
-        <!-- 게임 오버 모달 -->
+        <!-- 모달: 게임 오버 -->
         <div id="gameOverModal" class="game-modal-overlay hidden">
             <div class="game-modal-content game-over-modal">
                 <h2 id="gameOverTitle" class="text-3xl text-red-500 mb-4">GAME OVER</h2>
@@ -73,31 +60,38 @@
             </div>
         </div>
         
-        <!-- 슬롯 머신 모달 -->
+        <!-- 모달: 슬롯머신 -->
         <div id="slotMachineModal" class="game-modal-overlay hidden">
             <div class="game-modal-content slot-modal">
                 <button id="closeSlotModal" class="modal-close">&times;</button>
                 <h2 class="text-2xl text-yellow-400 mb-4">하층 구역 슬롯머신</h2>
-                
-                <!-- 슬롯 릴 -->
                 <div class="flex justify-center gap-4 my-6">
                     <div id="reel1" class="slot-reel">🍒</div>
                     <div id="reel2" class="slot-reel">🍒</div>
                     <div id="reel3" class="slot-reel">🍒</div>
                 </div>
-                
-                <!-- 베팅 정보 및 버튼 -->
                 <p id="slotMessage" class="text-sm text-gray-400 mb-4">베팅금: 10G | 행동력: 1 소모</p>
                 <button id="spinButton" class="spin-button">SPIN</button>
             </div>
         </div>
 
+        <!-- [신규] 모달: 채굴 미니게임 -->
+        <div id="miningModal" class="game-modal-overlay hidden">
+            <div class="game-modal-content mining-modal">
+                <h2 class="text-xl text-yellow-600 mb-4">광물 채굴 작업</h2>
+                <div class="flex justify-between mb-2 text-sm text-white px-4">
+                    <span>남은 횟수: <span id="miningMoves" class="text-green-400 text-xl">10</span></span>
+                    <span>점수: <span id="miningScore" class="text-yellow-400 text-xl">0</span></span>
+                </div>
+                <!-- 채굴 그리드 컨테이너 -->
+                <div id="miningGrid" class="mining-grid-container">
+                    <!-- 자바스크립트로 블록 생성됨 -->
+                </div>
+                <p class="text-xs text-gray-400 mt-3">같은 색 블록이 2개 이상 붙어있을 때 클릭하세요.</p>
+            </div>
+        </div>
     </div>
 
-    <!-- 
-      (구) <script src="script.js"></script> -> 삭제
-      (신) main.js를 모듈 타입으로 로드
-    -->
     <script type="module" src="main.js"></script>
 </body>
 </html>

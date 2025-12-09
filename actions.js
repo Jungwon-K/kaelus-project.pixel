@@ -1,17 +1,16 @@
-// actions.js: 플레이어의 상호작용 로직 (노동, 휴식, 도박)
 import * as config from './config.js';
-import { playerStats, isGameOver } from './state.js'; // isGameOver import 추가
+import { playerStats, isGameOver } from './state.js';
 import { 
     logMessage, updateUI, slotMessage, spinButton, 
-    reel1, reel2, reel3, showGameOverModal // showGameOverModal import 추가
+    reel1, reel2, reel3, showGameOverModal 
 } from './ui.js';
-// import { checkGameOver } from './game.js'; // 삭제 (순환 참조 원인)
+// [신규] mining.js import
+import { startMiningGame } from './mining.js';
 
-// --- [신규] checkGameOver 함수를 game.js에서 여기로 이동 ---
 /**
- * 게임 오버 조건 확인 (actions.js 내부에서 호출됨)
+ * 게임 오버 조건 확인
  */
-function checkGameOver() {
+export function checkGameOver() { // export 추가 (mining.js에서 사용)
     if (isGameOver) return;
 
     if (playerStats.money < 0) {
@@ -19,33 +18,38 @@ function checkGameOver() {
     } else if (playerStats.mental <= 0) {
         showGameOverModal("폐인", "정신력이 0이 되었습니다. 당신은 모든 의지를 잃었습니다.");
     }
-    
-    // gameLoopId를 여기서 직접 제어할 수 없으므로,
-    // showGameOverModal이 isGameOver=true로 설정하고,
-    // game.js의 메인 루프가 isGameOver를 확인하고 멈추도록 합니다.
 }
 
 /**
- * [채굴장] 노동 수행 로직
+ * [신규] 자칼에게 보호비 지불 로직
  */
-export function performLabor() {
-    if (playerStats.actionsLeft <= 0) {
-        logMessage("너무 피곤해서 더 이상 일할 수 없습니다.", "error");
+export function payProtection() {
+    if (playerStats.protectionDays > 0) {
+        logMessage(`아직 보호 기간이 ${playerStats.protectionDays}일 남았습니다.`, "info");
+        return;
+    }
+    
+    if (playerStats.money < config.PROTECTION_COST) {
+        logMessage(`돈이 부족합니다. (필요: ${config.PROTECTION_COST}G)`, "error");
         return;
     }
 
-    playerStats.actionsLeft--;
-    const earnings = config.LABOR_EARNINGS_BASE + playerStats.grit;
-    const mentalDrain = Math.max(1, config.LABOR_MENTAL_DRAIN_BASE - playerStats.fortitude);
-
-    playerStats.money += earnings;
-    playerStats.mental -= mentalDrain;
-
-    logMessage(`[노동] 채굴을 완료했습니다. ${earnings}G 획득.`, "work");
-    logMessage(`[노동] 정신력이 ${mentalDrain} 감소했습니다.`, "error");
-
+    playerStats.money -= config.PROTECTION_COST;
+    playerStats.protectionDays = config.PROTECTION_DURATION;
+    
+    logMessage(`[거래] 자칼에게 보호비 ${config.PROTECTION_COST}G를 냈습니다.`, "info");
+    logMessage(`[효과] 앞으로 ${config.PROTECTION_DURATION}일간 강도로부터 안전합니다.`, "info");
+    
     updateUI();
-    checkGameOver(); // 이제 이 파일 내의 함수를 호출
+    checkGameOver();
+}
+
+/**
+ * [채굴장] 노동 수행 로직 (수정됨: 미니게임 호출)
+ */
+export function performLabor() {
+    // 기존의 즉시 완료 로직을 주석 처리하고 미니게임 시작 함수를 호출합니다.
+    startMiningGame();
 }
 
 /**
@@ -66,22 +70,41 @@ export function restAtHome() {
  */
 export function nextDay() {
     playerStats.gameDay++;
-    logMessage(`[${playerStats.gameDay}일차] 새로운 날이 밝았습니다.`, "normal");
+    logMessage(`--- [${playerStats.gameDay}일차] 새벽 ---`, "normal");
 
+    // 1. 생활비 지출
     playerStats.money -= config.DAILY_LIVING_COST;
-    logMessage(`[지출] 일일 생활비 ${config.DAILY_LIVING_COST}G가 지출되었습니다.`, "error");
+    logMessage(`[지출] 일일 생활비 ${config.DAILY_LIVING_COST}G 지출.`, "error");
 
+    // 2. 치안 및 강도 이벤트 체크
+    if (playerStats.protectionDays > 0) {
+        playerStats.protectionDays--;
+        logMessage(`[안전] 자칼의 보호 덕분에 밤을 무사히 보냈습니다.`, "info");
+    } else {
+        if (Math.random() < config.ROBBER_CHANCE) {
+            const stolenMoney = Math.floor(playerStats.money * config.ROBBER_MONEY_LOSS_RATE);
+            playerStats.money -= stolenMoney;
+            playerStats.mental -= config.ROBBER_MENTAL_DMG;
+
+            logMessage(`[경고] 밤사이에 강도가 들었습니다!!`, "danger");
+            logMessage(`[피해] ${stolenMoney}G를 뺏기고, 정신력이 ${config.ROBBER_MENTAL_DMG} 감소했습니다.`, "danger");
+        } else {
+            logMessage(`[운] 다행히 밤사이에 아무 일도 없었습니다.`, "normal");
+        }
+    }
+
+    // 3. 행동력 초기화
     playerStats.actionsLeft = config.BASE_ACTIONS + Math.floor(playerStats.grit / 5);
-
+    
+    logMessage(`--- 아침이 밝았습니다 ---`, "normal");
     updateUI();
-    checkGameOver(); // 이제 이 파일 내의 함수를 호출
+    checkGameOver(); 
 }
 
 /**
  * [카지노] 슬롯 머신 스핀 로직
  */
 export function performSpin() {
-    // 1. 조건 검사
     if (playerStats.actionsLeft <= 0) {
         slotMessage.textContent = "행동력이 부족합니다.";
         return;
@@ -91,32 +114,27 @@ export function performSpin() {
         return;
     }
 
-    // 2. 비용 지불
     playerStats.actionsLeft--;
     playerStats.money -= config.SLOT_BET_AMOUNT;
     spinButton.disabled = true;
     slotMessage.textContent = "SPINNING...";
     updateUI();
 
-    // 3. 릴 애니메이션
     let spinInterval = setInterval(() => {
         reel1.textContent = config.slotSymbols[Math.floor(Math.random() * config.slotSymbols.length)];
         reel2.textContent = config.slotSymbols[Math.floor(Math.random() * config.slotSymbols.length)];
         reel3.textContent = config.slotSymbols[Math.floor(Math.random() * config.slotSymbols.length)];
     }, 100);
 
-    // 4. 결과 판정 (1초 후)
     setTimeout(() => {
         clearInterval(spinInterval);
 
-        // 5. 승리 확률 계산 ('운' 스탯)
         const winChance = config.SLOT_WIN_CHANCE_BASE + (playerStats.luck * config.SLOT_WIN_CHANCE_LUCK_MOD);
         const isWinner = (Math.random() * 100) < winChance;
 
         let finalReels;
 
         if (isWinner) {
-            // 승리
             finalReels = ['💰', '💰', '💰'];
             playerStats.money += config.SLOT_WIN_PRIZE;
             
@@ -127,7 +145,6 @@ export function performSpin() {
             logMessage(`[도박 승리] ${config.SLOT_WIN_PRIZE}G 획득! 정신력 ${mentalRecovery} 회복.`, "info");
 
         } else {
-            // 패배
             finalReels = ['💀', '🍒', '🍋'];
             
             const mentalLoss = Math.max(1, config.SLOT_LOSS_MENTAL_DRAIN_BASE - playerStats.fortitude);
@@ -143,7 +160,7 @@ export function performSpin() {
 
         spinButton.disabled = false;
         updateUI();
-        checkGameOver(); // 이제 이 파일 내의 함수를 호출
+        checkGameOver(); 
 
     }, 1000);
 }

@@ -1,9 +1,6 @@
 // state.js: 게임의 모든 '상태' 변수를 관리
 import { TILE_SIZE } from './config.js';
 
-// 이 객체들을 다른 모듈에서 import하여 직접 수정합니다.
-// (더 큰 프로젝트에서는 setter 함수를 쓰지만, 프로토타입에서는 이 방식이 간단합니다.)
-
 export let player = {
     x: TILE_SIZE * 5,
     y: TILE_SIZE * 5,
@@ -23,7 +20,16 @@ export let playerStats = {
     luck: 5,
     grit: 5,
     gameDay: 1,
-    actionsLeft: 2, // initGame에서 재설정됨
+    actionsLeft: 2,
+    protectionDays: 0,
+};
+
+// [신규] 채굴 미니게임 상태
+export let miningState = {
+    grid: [], // 2차원 배열
+    score: 0,
+    movesLeft: 0,
+    selectedGroup: [] // 현재 마우스 오버/클릭 된 그룹
 };
 
 export let gameObjects = [];
@@ -36,17 +42,10 @@ export let isGameOver = false;
 export let isModalOpen = false;
 export let gameLoopId = null;
 
-// 상태를 '변경'하는 헬퍼 함수들
-export function setGameOver(value) {
-    isGameOver = value;
-}
-export function setModalOpen(value) {
-    isModalOpen = value;
-}
-export function setGameLoopId(id) {
-    gameLoopId = id;
-}
-export function setGameObjects(objects) {
-    gameObjects.length = 0; // 배열 비우기
-    gameObjects.push(...objects); // 새 객체 추가
+export function setGameOver(value) { isGameOver = value; }
+export function setModalOpen(value) { isModalOpen = value; }
+export function setGameLoopId(id) { gameLoopId = id; }
+export function setGameObjects(objects) { 
+    gameObjects.length = 0; 
+    gameObjects.push(...objects); 
 }

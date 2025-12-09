@@ -7,33 +7,37 @@ import {
 } from './state.js';
 import { 
     canvas, ctx, logMessage, updateUI, 
-    gameOverModal, slotMachineModal, spinButton, restartButton // restartButton import 추가
+    gameOverModal, slotMachineModal, spinButton, restartButton,
+    openSlotMachine // ui.js import 통합
 } from './ui.js';
-import { performLabor, restAtHome, performSpin } from './actions.js';
-import { openSlotMachine } from './ui.js';
+import { performLabor, restAtHome, performSpin, payProtection } from './actions.js';
 
 /**
  * 게임 초기화
  */
 export function initGame() {
-    // ... (기존 initGame 내용과 동일) ...
     setGameOver(false);
     setModalOpen(false);
-    gameOverModal.classList.add('hidden');
-    slotMachineModal.classList.add('hidden');
 
-    // 플레이어 상태 초기화
+    // [수정] 모달 요소 존재 여부 확인 후 클래스 제어 (안전장치)
+    if (gameOverModal) gameOverModal.classList.add('hidden');
+    if (slotMachineModal) slotMachineModal.classList.add('hidden');
+    
+    const miningModal = document.getElementById('miningModal');
+    if (miningModal) {
+        miningModal.classList.add('hidden');
+    }
+
     Object.assign(player, {
         x: TILE_SIZE * 5, y: TILE_SIZE * 5,
         width: TILE_SIZE, height: TILE_SIZE,
         color: '#00FFFF', name: '니힐'
     });
 
-    // 플레이어 스탯 초기화
     Object.assign(playerStats, {
         money: 100, mental: 80, maxMental: 100, prestige: 5,
         fortitude: 5, willpower: 5, luck: 5, grit: 5,
-        gameDay: 1
+        gameDay: 1, protectionDays: 0 
     });
     playerStats.actionsLeft = BASE_ACTIONS + Math.floor(playerStats.grit / 5);
 
@@ -55,20 +59,26 @@ export function initGame() {
             interaction: () => performLabor()
         },
         { 
+            x: TILE_SIZE * 15, y: TILE_SIZE * 2, width: TILE_SIZE * 3, height: TILE_SIZE * 3, 
+            color: '#800080', name: '자칼 아지트 (보호/E)',
+            interaction: () => payProtection()
+        },
+        { 
             x: TILE_SIZE * 15, y: TILE_SIZE * 10, width: TILE_SIZE * 3, height: TILE_SIZE * 3, 
             color: '#FFFFFF', name: '니콜라 건물 (E)',
             interaction: () => logMessage("과시(Prestige)가 부족하여 입장할 수 없습니다.", "error")
         }
     ]);
 
-    // 키 상태 초기화
     Object.keys(keys).forEach(key => keys[key] = false);
 
-    // 메시지 로그 초기화
-    document.getElementById('messageLog').innerHTML = ''; 
+    // 메시지 로그 안전 처리
+    const logContainer = document.getElementById('messageLog');
+    if (logContainer) logContainer.innerHTML = ''; 
+    
     logMessage(`[${playerStats.gameDay}일차] 하층 구역에 오신 것을 환영합니다.`);
     logMessage("채굴장에서 [E]를 눌러 돈을 버세요.");
-    logMessage("카지노에서 [E]를 눌러 도박을 하세요.");
+    logMessage("자칼 아지트에서 [E]를 눌러 보호비를 낼 수 있습니다."); 
     logMessage("집에서 [E]를 눌러 하루를 마감합니다.");
 
     updateUI();
@@ -78,7 +88,6 @@ export function initGame() {
  * 충돌 감지
  */
 function checkCollision(rect1, rect2) {
-    // ... (기존과 동일) ...
     return (
         rect1.x < rect2.x + rect2.width &&
         rect1.x + rect1.width > rect2.x &&
@@ -91,7 +100,6 @@ function checkCollision(rect1, rect2) {
  * [E] 키 상호작용 처리
  */
 export function handleInteraction() {
-    // ... (기존과 동일) ...
     if (isModalOpen) return;
 
     const interactionZone = {
@@ -113,36 +121,24 @@ export function handleInteraction() {
 }
 
 /**
- * 게임 오버 조건 확인
- */
-// export function checkGameOver() { // 삭제 (actions.js로 이동)
-//     ...
-// }
-
-
-/**
  * 게임 로직 업데이트 (1프레임)
  */
 function update() {
-    // ... (기존과 동일) ...
     if (isGameOver || isModalOpen) return;
 
     let nextX = player.x;
     let nextY = player.y;
 
-    // 1. 이동
     if (keys.w) nextY -= PLAYER_SPEED;
     if (keys.s) nextY += PLAYER_SPEED;
     if (keys.a) nextX -= PLAYER_SPEED;
     if (keys.d) nextX += PLAYER_SPEED;
 
-    // 2. 캔버스 경계 충돌
     if (nextX < 0) nextX = 0;
     if (nextX + player.width > canvas.width) nextX = canvas.width - player.width;
     if (nextY < 0) nextY = 0;
     if (nextY + player.height > canvas.height) nextY = canvas.height - player.height;
 
-    // 3. 오브젝트 충돌 확인
     let potentialMove = { ...player, x: nextX, y: nextY };
     let collision = false;
     for (const obj of gameObjects) {
@@ -152,7 +148,6 @@ function update() {
         }
     }
     
-    // 4. 위치 업데이트
     if (!collision) {
         player.x = nextX;
         player.y = nextY;
@@ -163,40 +158,43 @@ function update() {
  * 화면 그리기 (1프레임)
  */
 function draw() {
-    // ... (기존과 동일) ...
+    if (!ctx) return; // 캔버스 컨텍스트 확인
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 1. 게임 오브젝트(건물 등) 그리기
-    for (const obj of gameObjects) {
-        ctx.fillStyle = obj.color;
-        ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
-        
-        ctx.fillStyle = 'white';
-        ctx.font = '10px "Press Start 2P"';
-        ctx.textAlign = 'center';
-        const nameParts = obj.name.split('(');
-        ctx.fillText(nameParts[0], obj.x + obj.width / 2, obj.y - 18);
-        if (nameParts[1]) {
-             ctx.fillText(`(${nameParts[1]}`, obj.x + obj.width / 2, obj.y - 6);
+    // gameObjects가 정의되지 않았거나 비어있을 경우 대비
+    if (gameObjects && gameObjects.length > 0) {
+        for (const obj of gameObjects) {
+            ctx.fillStyle = obj.color;
+            ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+            
+            ctx.fillStyle = 'white';
+            ctx.font = '10px "Press Start 2P"';
+            ctx.textAlign = 'center';
+            const nameParts = obj.name.split('(');
+            ctx.fillText(nameParts[0], obj.x + obj.width / 2, obj.y - 18);
+            if (nameParts[1]) {
+                 ctx.fillText(`(${nameParts[1]}`, obj.x + obj.width / 2, obj.y - 6);
+            }
         }
     }
     
-    // 2. 플레이어 그리기
-    ctx.fillStyle = player.color;
-    ctx.fillRect(player.x, player.y, player.width, player.height);
+    if (player) {
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
 
-    // 3. 플레이어 이름
-    ctx.fillStyle = 'white';
-    ctx.font = '10px "Press Start 2P"';
-    ctx.textAlign = 'center';
-    ctx.fillText(player.name, player.x + player.width / 2, player.y - 8);
+        ctx.fillStyle = 'white';
+        ctx.font = '10px "Press Start 2P"';
+        ctx.textAlign = 'center';
+        ctx.fillText(player.name, player.x + player.width / 2, player.y - 8);
+    }
 }
 
 /**
  * 메인 게임 루프
  */
 export function gameLoop() {
-    if (isGameOver) { // isGameOver 상태를 확인하고 루프 중지
+    if (isGameOver) {
         if(gameLoopId) cancelAnimationFrame(gameLoopId);
         setGameLoopId(null);
         return; 
@@ -209,9 +207,6 @@ export function gameLoop() {
     setGameLoopId(newLoopId);
 }
 
-
-// --- 입력 및 이벤트 리스너 설정 ---
-// (기존 keydown, keyup 리스너는 동일)
 window.addEventListener('keydown', (e) => {
     if (isGameOver) return;
     if (isModalOpen) {
@@ -243,11 +238,9 @@ window.addEventListener('keyup', (e) => {
     }
 });
 
-// --- [신규] ui.js에서 이동해 온 리스너들 ---
-spinButton.addEventListener('click', performSpin);
-
-restartButton.addEventListener('click', () => {
-    // game.js 내의 함수를 직접 호출
+// 버튼 리스너도 안전하게 처리
+if (spinButton) spinButton.addEventListener('click', performSpin);
+if (restartButton) restartButton.addEventListener('click', () => {
     initGame(); 
     gameLoop(); 
 });
